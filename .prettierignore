@@ -1,0 +1,9 @@
+*.lock
+*.node_modules
+*.json
+*.yml
+.DS_Store
+node_modules
+dist
+build
+public
