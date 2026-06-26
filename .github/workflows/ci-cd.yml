@@ -1,0 +1,106 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run type-check
+
+  build-and-push:
+    needs: typecheck
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare .env
+        id: prep
+        run: |
+          REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')
+          printf '%s\n' \
+            "GITHUB_REPOSITORY=$REPO_LOWER" \
+            'DB_NAME=boards' \
+            'DB_USER=${{ secrets.DB_USER }}' \
+            'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
+            'JWT_SECRET=${{ secrets.JWT_SECRET }}' \
+            'JWT_LIFETIME=15m' \
+            'ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}' \
+            'ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}' \
+            > /tmp/envfile
+          echo "b64=$(base64 -w0 /tmp/envfile)" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSH_USER: ${{ secrets.VPS_USERNAME }}
+          SSH_HOST: ${{ secrets.VPS_HOST }}
+          SSH_PORT: ${{ secrets.VPS_PORT || 22 }}
+          ENV_B64: ${{ steps.prep.outputs.b64 }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          SSH_BASE="ssh -o StrictHostKeyChecking=no -p $SSH_PORT $SSH_USER@$SSH_HOST"
+
+          echo "=== Create directory ==="
+          $SSH_BASE "mkdir -p /opt/boards-be"
+
+          echo "=== Copy compose file ==="
+          curl -sL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.prod.yml" | $SSH_BASE "cat > /opt/boards-be/docker-compose.yml"
+
+          echo "=== Write .env ==="
+          printf '%s\n' "$ENV_B64" | $SSH_BASE "base64 -d > /opt/boards-be/.env"
+
+          echo "=== Deploy containers ==="
+          $SSH_BASE "cd /opt/boards-be && echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"

@@ -170,6 +170,30 @@ Backend on port 3000, PostgreSQL on port 5432.
 
 See `.env.example`. Key vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `PORT`, `NODE_ENV`, `HOST`, `SWAGGER_HOST`.
 
+## CI/CD (GitHub Actions)
+
+One workflow in `.github/workflows/ci-cd.yml`:
+
+| Trigger      | Jobs                               |
+| ------------ | ---------------------------------- |
+| Push `main`  | typecheck → build & push → deploy  |
+| PR `main`    | typecheck only                     |
+
+**Required GitHub Secrets:**
+- `VPS_HOST` — server IP
+- `VPS_USERNAME` — SSH user (boards-be)
+- `VPS_SSH_KEY` — SSH private key
+- `DB_USER` — PostgreSQL user for production
+- `DB_PASSWORD` — PostgreSQL password for production
+- `JWT_SECRET` — JWT signing secret
+- `ADMIN_EMAIL` — admin email for seed
+- `ADMIN_PASSWORD` — admin password for seed
+
+**Initial VPS setup:**
+1. Run `scripts/setup-vps-user.sh` as root on VPS
+2. Add SSH public key to `/home/boards-be/.ssh/authorized_keys`
+3. Push to `main` — workflow creates `/opt/boards-be/`, `.env`, `docker-compose.yml` and starts services
+
 ## Code Conventions
 
 - ES modules — use `.js` extension in imports
