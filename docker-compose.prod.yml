@@ -37,6 +37,7 @@ services:
       JWT_LIFETIME: ${JWT_LIFETIME:-15m}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SWAGGER_HOST: ${SWAGGER_HOST}
     volumes:
       - app_public:/app/public
     depends_on:
