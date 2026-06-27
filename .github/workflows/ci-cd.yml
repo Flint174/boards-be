@@ -75,7 +75,6 @@ jobs:
             'JWT_LIFETIME=15m' \
             'ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}' \
             'ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}' \
-            "SWAGGER_HOST=${{ secrets.SWAGGER_HOST }}" \
             > /tmp/envfile
           echo "b64=$(base64 -w0 /tmp/envfile)" >> "$GITHUB_OUTPUT"
 

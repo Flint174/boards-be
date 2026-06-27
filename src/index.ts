@@ -34,7 +34,6 @@ import {
 } from "./constants/responses.js";
 
 const host = process.env.HOST || (process.env.DOCKER ? "0.0.0.0" : "localhost");
-const swaggerHost = process.env.SWAGGER_HOST || "localhost";
 const port = parseInt(process.env.PORT || "3000");
 
 const fastify = Fastify({
@@ -72,40 +71,42 @@ fastify.register(fastifyStatic, {
   prefix: "/uploads/",
 });
 
-// Register Swagger
-fastify.register(swagger, {
-  openapi: {
-    info: {
-      title: "Boards API",
-      description: "API documentation for Boards",
-      version: "1.0.0",
-    },
-    servers: [
-      {
-        url: `http://${swaggerHost}:${port}`,
-        description: "Development server",
+// Register Swagger (only in development)
+if (process.env.NODE_ENV !== "production") {
+  fastify.register(swagger, {
+    openapi: {
+      info: {
+        title: "Boards API",
+        description: "API documentation for Boards",
+        version: "1.0.0",
       },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
+      servers: [
+        {
+          url: `http://localhost:${port}`,
+          description: "Development server",
+        },
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
         },
       },
     },
-  },
-  transform: jsonSchemaTransform,
-});
+    transform: jsonSchemaTransform,
+  });
 
-fastify.register(swaggerUi, {
-  routePrefix: "/docs",
-  uiConfig: {
-    docExpansion: "list",
-    deepLinking: false,
-  },
-});
+  fastify.register(swaggerUi, {
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "list",
+      deepLinking: false,
+    },
+  });
+}
 
 // Register routes
 fastify.register(userRoutes, { prefix: "/api/v1/users" });
@@ -173,7 +174,6 @@ const start = async () => {
 
     await fastify.listen({ port, host });
     console.log(`🚀 Server running on http://localhost:${port}`);
-    console.log(`📚 Swagger docs at http://localhost:${port}/docs`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

@@ -163,12 +163,12 @@ docker compose down     # Stop services
 ```
 
 Backend on port 3000, PostgreSQL on port 5432.
-`HOST` env var controls listen address (`0.0.0.0` in Docker); `SWAGGER_HOST` for Swagger server URL.
+`HOST` env var controls listen address (`0.0.0.0` in Docker).
 `public/` directory is created and chowned to `nodejs` user in Dockerfile for file uploads.
 
 ## Environment Variables
 
-See `.env.example`. Key vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `PORT`, `NODE_ENV`, `HOST`, `SWAGGER_HOST`.
+See `.env.example`. Key vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `PORT`, `NODE_ENV`, `HOST`.
 
 ## CI/CD (GitHub Actions)
 
@@ -189,7 +189,6 @@ One workflow in `.github/workflows/ci-cd.yml`:
 - `JWT_SECRET` — JWT signing secret
 - `ADMIN_EMAIL` — admin email for seed
 - `ADMIN_PASSWORD` — admin password for seed
-- `SWAGGER_HOST` — domain for Swagger docs (e.g., `localhost`)
 
 **Initial VPS setup:**
 
