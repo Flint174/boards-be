@@ -161,13 +161,27 @@ const start = async () => {
     // Create uuid extension if not exists
     await AppDataSource.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
 
+    // Auto-create tables if database is empty (fresh deploy)
+    const hasUsersTable = await AppDataSource.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')`,
+    );
+    if (!hasUsersTable[0].exists) {
+      console.log("⚙️  Empty database detected, running synchronize...");
+      await AppDataSource.synchronize();
+      console.log("✅ Tables created");
+    }
+
     // GIN index for full-text search on rooms
-    await AppDataSource.query(`
-      CREATE INDEX IF NOT EXISTS idx_room_search_tsv
-      ON rooms USING GIN (
-        to_tsvector('russian', coalesce(name, '') || ' ' || coalesce(description, ''))
-      );
-    `);
+    try {
+      await AppDataSource.query(`
+        CREATE INDEX IF NOT EXISTS idx_room_search_tsv
+        ON rooms USING GIN (
+          to_tsvector('russian', coalesce(name, '') || ' ' || coalesce(description, ''))
+        );
+      `);
+    } catch (err) {
+      console.warn("⚠️  GIN index not created:", (err as Error).message);
+    }
 
     // Seed default admin user
     await seedAdminIfNotExists();
