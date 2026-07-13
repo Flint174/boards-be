@@ -63,6 +63,10 @@ const cardSchema = z.object({
   createdAt: z.date(),
 });
 
+const cardWithVotedSchema = cardSchema.extend({
+  voted: z.boolean(),
+});
+
 export const createCardResponseSchema = z.object({
   success: z.boolean(),
   data: cardSchema,
@@ -75,12 +79,18 @@ export const cardResponseSchema = z.object({
 });
 export type CardResponseSchema = z.infer<typeof cardResponseSchema>;
 
-export const cardsResponseSchema = z.object({
+export const cardWithVotedResponseSchema = z.object({
   success: z.boolean(),
-  data: z.array(cardSchema),
+  data: cardWithVotedSchema,
+});
+export type CardWithVotedResponseSchema = z.infer<typeof cardWithVotedResponseSchema>;
+
+export const cardsWithVotedResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.array(cardWithVotedSchema),
   meta: metaResponseSchema,
 });
-export type CardsResponseSchema = z.infer<typeof cardsResponseSchema>;
+export type CardsWithVotedResponseSchema = z.infer<typeof cardsWithVotedResponseSchema>;
 
 export const voteResponseSchema = z.object({
   success: z.boolean(),

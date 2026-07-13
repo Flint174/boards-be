@@ -8,7 +8,8 @@ import {
   voteParamsSchema,
   createCardResponseSchema,
   cardResponseSchema,
-  cardsResponseSchema,
+  cardsWithVotedResponseSchema,
+  cardWithVotedResponseSchema,
   voteResponseSchema,
   deleteCardResponseSchema,
 } from "../../schemas/card.schema.js";
@@ -43,7 +44,7 @@ export async function cardRoutes(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         querystring: cardQuerySchema,
         response: {
-          200: cardsResponseSchema,
+200: cardsWithVotedResponseSchema,
         },
       },
     },
@@ -59,7 +60,7 @@ export async function cardRoutes(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         params: cardParamsSchema,
         response: {
-          200: cardResponseSchema,
+          200: cardWithVotedResponseSchema,
         },
       },
     },

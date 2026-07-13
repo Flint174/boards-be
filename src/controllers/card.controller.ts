@@ -8,7 +8,7 @@ import {
   VoteParamsSchema,
   CreateCardResponseSchema,
   CardResponseSchema,
-  CardsResponseSchema,
+  CardsWithVotedResponseSchema,
   VoteResponseSchema,
 } from "../schemas/card.schema.js";
 import { ERROR_RESPONSE, NOT_FOUND_RESPONSE, ACCESS_DENIED_RESPONSE } from "../constants/responses.js";
@@ -53,7 +53,7 @@ export class CardController {
         limit,
       });
 
-      const response: CardsResponseSchema = {
+      const response: CardsWithVotedResponseSchema = {
         success: true,
         data: result.items,
         meta: {

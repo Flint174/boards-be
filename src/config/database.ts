@@ -16,6 +16,6 @@ export const AppDataSource = new DataSource({
   synchronize: process.env.NODE_ENV === "development", // Только для разработки!
   logging: process.env.NODE_ENV === "development",
   entities: [User, Room, Card, Board, Comment],
-  migrations: ["src/migrations/*.ts"],
+  migrations: [process.env.DOCKER === "true" ? "dist/migrations/*.js" : "src/migrations/*.ts"],
   subscribers: [],
 });

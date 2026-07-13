@@ -12,6 +12,9 @@
     "type-check": "tsc --noEmit",
     "prebuild": "npm run clean",
     "seed:admin": "tsx src/cli/seed-admin.ts",
+    "migration:run": "typeorm migration:run -d src/config/database.ts",
+    "migration:revert": "typeorm migration:revert -d src/config/database.ts",
+    "migration:generate": "typeorm migration:generate -d src/config/database.ts",
     "prettier": "prettier . --write --log-level error"
   },
   "author": "",

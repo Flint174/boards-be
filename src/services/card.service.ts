@@ -120,13 +120,29 @@ export class CardService {
       take: limit,
     });
 
-    return { items, total, page, limit };
+    let votedIds = new Set<number>();
+    if (items.length > 0) {
+      const votedCards = await this.cardRepository
+        .createQueryBuilder("card")
+        .innerJoin("card.voters", "voter", "voter.id = :userId", { userId })
+        .select("card.id")
+        .where("card.id IN (:...ids)", { ids: items.map((i) => i.id) })
+        .getMany();
+      votedIds = new Set(votedCards.map((c) => c.id));
+    }
+
+    const itemsWithVoted = items.map((item) => ({
+      ...item,
+      voted: votedIds.has(item.id),
+    }));
+
+    return { items: itemsWithVoted, total, page, limit };
   }
 
   async getCardById(id: number, userId: number) {
     const card = await this.cardRepository.findOne({
       where: { id },
-      relations: ["owner", "board", "board.room", "board.room.users"],
+      relations: ["owner", "board", "board.room", "board.room.users", "voters"],
     });
 
     if (!card) {
@@ -138,7 +154,9 @@ export class CardService {
       throw new Error(ERRORS.ACCESS_DENIED);
     }
 
-    return card;
+    const voted = card.voters.some((v) => v.id === userId);
+
+    return { ...card, voted };
   }
 
   async updateCard(id: number, userId: number, data: Partial<Card>) {
@@ -156,7 +174,6 @@ export class CardService {
       throw new Error(ERRORS.ACCESS_DENIED);
     }
 
-    // Only card owner can update title and description
     if (card.owner.id !== userId) {
       throw new Error(ERRORS.ONLY_OWNER_CAN_EDIT);
     }

@@ -171,6 +171,11 @@ const start = async () => {
       console.log("✅ Tables created");
     }
 
+    const applied = await AppDataSource.runMigrations();
+    if (applied.length > 0) {
+      console.log(`✅ Applied ${applied.length} migration(s)`);
+    }
+
     // GIN index for full-text search on rooms
     try {
       await AppDataSource.query(`

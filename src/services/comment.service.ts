@@ -62,6 +62,9 @@ export class CommentService {
 
     const saved = await this.commentRepository.save(comment);
 
+    card.commentsCount = (card.commentsCount || 0) + 1;
+    await this.cardRepository.save(card);
+
     const result = await this.commentRepository.findOne({
       where: { id: saved.id },
       relations: ["author", "parent"],
@@ -166,11 +169,15 @@ export class CommentService {
     const isRoomOwner = comment.card.board.room.owner.id === userId;
 
     if (isCommentOwner || isCardOwner || isBoardOwner || isRoomOwner) {
+      comment.card.commentsCount = Math.max(0, (comment.card.commentsCount || 0) - 1);
+      await this.cardRepository.save(comment.card);
       return await this.commentRepository.remove(comment);
     }
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (user?.role === UserRole.ADMIN) {
+      comment.card.commentsCount = Math.max(0, (comment.card.commentsCount || 0) - 1);
+      await this.cardRepository.save(comment.card);
       return await this.commentRepository.remove(comment);
     }
 
