@@ -12,9 +12,8 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
   exit 1
 fi
 
-set -a
-source "$PROJECT_DIR/.env"
-set +a
+DB_USER=$(grep -E '^DB_USER=' "$PROJECT_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+DB_NAME=$(grep -E '^DB_NAME=' "$PROJECT_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
 
 DB_USER="${DB_USER:-postgres}"
 DB_NAME="${DB_NAME:-boards}"
