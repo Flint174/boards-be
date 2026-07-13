@@ -104,3 +104,9 @@ jobs:
 
           echo "=== Deploy containers ==="
           $SSH_BASE "cd /opt/boards-be && echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+
+          echo "=== Setup backup cron ==="
+          $SSH_BASE "mkdir -p /opt/boards-be/scripts /opt/boards-be/backups"
+          curl -sL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/backup-db.sh" | $SSH_BASE "cat > /opt/boards-be/scripts/backup-db.sh && chmod +x /opt/boards-be/scripts/backup-db.sh"
+          $SSH_BASE "chmod 600 /opt/boards-be/.env"
+          $SSH_BASE "(crontab -l 2>/dev/null | grep -v 'backup-db.sh'; echo '0 3 * * * /opt/boards-be/scripts/backup-db.sh >> /opt/boards-be/backups/backup.log 2>&1') | crontab -"
